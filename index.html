@@ -47,6 +47,7 @@
       <button class="hamburger" id="hamburger">☰</button>
       <h1 class="page-title" id="pageTitle">Dashboard</h1>
       <div class="topbar-actions">
+        <button class="btn-theme-toggle" id="themeToggle" title="Toggle Dark/Light Mode" aria-label="Toggle Dark Mode">🌙</button>
         <span class="current-date" id="currentDate"></span>
       </div>
     </header>
@@ -489,7 +490,13 @@
     <div class="modal modal-lg">
       <div class="modal-header">
         <h3 id="lyricsModalTitle">Song Lyrics</h3>
-        <button class="modal-close" onclick="closeModal('lyricsModal')">✕</button>
+        <div class="modal-header-actions">
+          <div class="lyrics-font-controls">
+            <button class="btn-icon" onclick="adjustLyricsFontSize(-2)" title="Smaller text">A-</button>
+            <button class="btn-icon" onclick="adjustLyricsFontSize(2)" title="Larger text">A+</button>
+          </div>
+          <button class="modal-close" onclick="closeModal('lyricsModal')">✕</button>
+        </div>
       </div>
       <div class="modal-body" id="lyricsModalBody"></div>
       <div class="modal-footer">
@@ -511,6 +518,30 @@
       </div>
     </div>
   </div>
+
+  <!-- ========== MOBILE BOTTOM NAV BAR ========== -->
+  <nav class="mobile-bottom-nav" id="mobileBottomNav">
+    <button class="bottom-nav-item active" data-page="dashboard">
+      <span class="b-icon">🏠</span>
+      <span class="b-label">Home</span>
+    </button>
+    <button class="bottom-nav-item" data-page="events">
+      <span class="b-icon">📅</span>
+      <span class="b-label">Events</span>
+    </button>
+    <button class="bottom-nav-item" data-page="songs">
+      <span class="b-icon">🎵</span>
+      <span class="b-label">Songs</span>
+    </button>
+    <button class="bottom-nav-item" data-page="devotionals">
+      <span class="b-icon">📖</span>
+      <span class="b-label">Devotions</span>
+    </button>
+    <button class="bottom-nav-item" data-page="giving">
+      <span class="b-icon">💝</span>
+      <span class="b-label">Giving</span>
+    </button>
+  </nav>
 
   <!-- Toast Notification -->
   <div class="toast" id="toast"></div>

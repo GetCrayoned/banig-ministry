@@ -67,14 +67,25 @@ function showToast(msg, type = 'success') {
 function goToPage(page) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-link').forEach(a => a.classList.remove('active'));
-  document.getElementById('page-' + page).classList.add('active');
-  document.querySelector(`[data-page="${page}"]`).classList.add('active');
+  document.querySelectorAll('.bottom-nav-item').forEach(b => b.classList.remove('active'));
+  
+  const targetPage = document.getElementById('page-' + page);
+  if (targetPage) targetPage.classList.add('active');
+
+  const activeNavLink = document.querySelector(`.nav-link[data-page="${page}"]`);
+  if (activeNavLink) activeNavLink.classList.add('active');
+
+  const activeBottomNav = document.querySelector(`.bottom-nav-item[data-page="${page}"]`);
+  if (activeBottomNav) activeBottomNav.classList.add('active');
+
   document.getElementById('pageTitle').textContent =
     page.charAt(0).toUpperCase() + page.slice(1).replace('devotionals','Devotionals')
       .replace('songs','Songs').replace('giving','Tithes & Offering')
       .replace('attendance','Attendance').replace('settings','Settings')
       .replace('events','Events').replace('dashboard','Dashboard');
+
   closeSidebar();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
   renderPage(page);
 }
 
@@ -841,6 +852,45 @@ function clearAllData() {
   showToast('All data cleared.', 'error');
 }
 
+// ===================== THEME MANAGER =====================
+function initTheme() {
+  const saved = localStorage.getItem('banig_theme');
+  const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const current = saved || (prefersDark ? 'dark' : 'light');
+  applyTheme(current);
+
+  const toggleBtn = document.getElementById('themeToggle');
+  if (toggleBtn) {
+    toggleBtn.addEventListener('click', toggleTheme);
+  }
+}
+
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  const toggleBtn = document.getElementById('themeToggle');
+  if (toggleBtn) {
+    toggleBtn.textContent = theme === 'dark' ? '☀️' : '🌙';
+    toggleBtn.setAttribute('title', theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode');
+  }
+}
+
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+  const next = current === 'dark' ? 'light' : 'dark';
+  localStorage.setItem('banig_theme', next);
+  applyTheme(next);
+  showToast(next === 'dark' ? '🌙 Dark Mode enabled' : '☀️ Light Mode enabled');
+}
+
+// ===================== LYRICS FONT SIZE =====================
+let currentLyricsFontSize = 1.05; // rem
+function adjustLyricsFontSize(delta) {
+  // delta in pt or +/- step
+  const step = delta > 0 ? 0.15 : -0.15;
+  currentLyricsFontSize = Math.min(Math.max(currentLyricsFontSize + step, 0.85), 2.2);
+  document.documentElement.style.setProperty('--lyrics-size', currentLyricsFontSize + 'rem');
+}
+
 // ===================== CURRENT DATE =====================
 function setCurrentDate() {
   const now = new Date();
@@ -859,11 +909,19 @@ document.addEventListener('keydown', (e) => {
 
 // ===================== INIT =====================
 document.addEventListener('DOMContentLoaded', () => {
-  // Nav links
+  // Nav links (Sidebar)
   document.querySelectorAll('.nav-link').forEach(link => {
     link.addEventListener('click', (e) => {
       e.preventDefault();
       goToPage(link.dataset.page);
+    });
+  });
+
+  // Mobile Bottom Nav items
+  document.querySelectorAll('.bottom-nav-item').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      goToPage(btn.dataset.page);
     });
   });
 
@@ -872,6 +930,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('closeSidebar').addEventListener('click', closeSidebar);
   document.getElementById('overlay').addEventListener('click', closeSidebar);
 
+  initTheme();
   setCurrentDate();
   renderPage('dashboard');
 });
