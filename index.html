@@ -34,7 +34,10 @@
     </ul>
 
     <div class="sidebar-footer">
-      <p>Banig Ministry &copy; 2025</p>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.4rem;">
+        <span>Banig Ministry &copy; 2025</span>
+        <button class="btn-sidebar-admin" id="sidebarAdminBtn" onclick="handleAdminStatusClick()">🔒 Login</button>
+      </div>
     </div>
   </nav>
 
@@ -47,6 +50,7 @@
       <button class="hamburger" id="hamburger">☰</button>
       <h1 class="page-title" id="pageTitle">Dashboard</h1>
       <div class="topbar-actions">
+        <button class="btn-admin-pill" id="adminStatusBtn" onclick="handleAdminStatusClick()">🔒 Admin</button>
         <button class="btn-theme-toggle" id="themeToggle" title="Toggle Dark/Light Mode" aria-label="Toggle Dark Mode">🌙</button>
         <span class="current-date" id="currentDate"></span>
       </div>
@@ -121,7 +125,7 @@
       <section class="page" id="page-events">
         <div class="page-actions">
           <h2>Events</h2>
-          <button class="btn-primary" onclick="openModal('eventModal')">+ Add Event</button>
+          <button class="btn-primary admin-only" onclick="openModal('eventModal')">+ Add Event</button>
         </div>
 
         <div class="filter-bar">
@@ -140,7 +144,7 @@
       <section class="page" id="page-attendance">
         <div class="page-actions">
           <h2>Attendance</h2>
-          <button class="btn-primary" onclick="openModal('attendanceModal')">+ Log Attendance</button>
+          <button class="btn-primary admin-only" onclick="openModal('attendanceModal')">+ Log Attendance</button>
         </div>
 
         <div class="filter-bar">
@@ -155,7 +159,7 @@
                 <th>Event / Session</th>
                 <th>Attendees</th>
                 <th>Notes</th>
-                <th>Actions</th>
+                <th class="admin-only">Actions</th>
               </tr>
             </thead>
             <tbody id="attendanceBody"></tbody>
@@ -167,7 +171,7 @@
       <section class="page" id="page-devotionals">
         <div class="page-actions">
           <h2>Weekly Devotionals</h2>
-          <button class="btn-primary" onclick="openModal('devotionalModal')">+ Add Devotional</button>
+          <button class="btn-primary admin-only" onclick="openModal('devotionalModal')">+ Add Devotional</button>
         </div>
 
         <div class="filter-bar">
@@ -181,7 +185,7 @@
       <section class="page" id="page-songs">
         <div class="page-actions">
           <h2>Song Repository</h2>
-          <button class="btn-primary" onclick="openModal('songModal')">+ Add Song</button>
+          <button class="btn-primary admin-only" onclick="openModal('songModal')">+ Add Song</button>
         </div>
 
         <div class="filter-bar">
@@ -202,7 +206,7 @@
       <section class="page" id="page-giving">
         <div class="page-actions">
           <h2>Tithes &amp; Offering</h2>
-          <button class="btn-primary" onclick="openModal('qrModal')">+ Manage QR Codes</button>
+          <button class="btn-primary admin-only" onclick="openModal('qrModal')">+ Manage QR Codes</button>
         </div>
 
         <p class="section-desc">Scan a QR code below to give your tithes and offering. Thank you for your faithful giving! 🙏</p>
@@ -215,7 +219,17 @@
         <div class="page-actions">
           <h2>Settings</h2>
         </div>
-        <div class="settings-container">
+
+        <!-- When not logged in as Admin -->
+        <div id="settingsLockedView" class="card" style="max-width:540px;margin:2rem auto;text-align:center;padding:2rem 1.5rem;">
+          <div style="font-size:2.8rem;margin-bottom:0.75rem;">🔒</div>
+          <h3 style="color:var(--primary);margin-bottom:0.5rem;padding:0;">Admin Access Required</h3>
+          <p class="text-muted" style="margin-bottom:1.5rem;">Only authorized ministry administrators can modify settings, add/edit records, or manage backups.</p>
+          <button class="btn-primary" onclick="openModal('adminLoginModal')">🔑 Log In as Admin</button>
+        </div>
+
+        <!-- When logged in as Admin -->
+        <div id="settingsAdminView" class="settings-container admin-only">
           <div class="card">
             <h3>Ministry Info</h3>
             <div class="form-group">
@@ -235,6 +249,24 @@
               <input type="text" id="settingLocation" class="form-input" placeholder="Church name or address" />
             </div>
             <button class="btn-primary" onclick="saveSettings()">Save Settings</button>
+          </div>
+
+          <div class="card">
+            <h3>Admin Security</h3>
+            <p class="text-muted">Change the password required for editing ministry content.</p>
+            <div class="form-group">
+              <label>Current Password</label>
+              <input type="password" id="currentAdminPass" class="form-input" placeholder="Current password" />
+            </div>
+            <div class="form-group">
+              <label>New Password</label>
+              <input type="password" id="newAdminPass" class="form-input" placeholder="At least 6 characters" />
+            </div>
+            <div class="form-group">
+              <label>Confirm New Password</label>
+              <input type="password" id="confirmAdminPass" class="form-input" placeholder="Re-enter new password" />
+            </div>
+            <button class="btn-primary" onclick="changeAdminPassword()">Update Password</button>
           </div>
 
           <div class="card">
@@ -516,6 +548,31 @@
       <div class="modal-footer">
         <button class="btn-secondary" onclick="closeModal('devViewModal')">Close</button>
       </div>
+    </div>
+  </div>
+
+  <!-- Admin Login Modal -->
+  <div class="modal-overlay" id="adminLoginModal">
+    <div class="modal" style="max-width:400px;">
+      <div class="modal-header">
+        <h3 style="display:flex;align-items:center;gap:0.5rem;"><span>🔐</span> Admin Login</h3>
+        <button class="modal-close" onclick="closeModal('adminLoginModal')">✕</button>
+      </div>
+      <form onsubmit="handleAdminLoginForm(event)">
+        <div class="modal-body">
+          <p class="text-muted" style="margin-bottom:1rem;font-size:0.85rem;">Enter the ministry administrator password to manage events, devotionals, songs, attendance, and settings.</p>
+          <div class="form-group">
+            <label for="adminPasswordInput">Admin Password</label>
+            <input type="password" id="adminPasswordInput" class="form-input" placeholder="Enter password" required autocomplete="current-password" />
+            <small class="hint" style="margin-top:0.35rem;">Default password: <code>banig2025</code> (changeable in Settings)</small>
+          </div>
+          <div id="adminLoginError" style="color:var(--danger);font-size:0.83rem;font-weight:600;display:none;margin-top:0.5rem;"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" onclick="closeModal('adminLoginModal')">Cancel</button>
+          <button type="submit" class="btn-primary">Log In</button>
+        </div>
+      </form>
     </div>
   </div>
 

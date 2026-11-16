@@ -1004,6 +1004,56 @@ body {
   line-height: 1.6;
 }
 
+/* ===== ADMIN SYSTEM ===== */
+body:not(.is-admin) .admin-only {
+  display: none !important;
+}
+
+body.is-admin #settingsLockedView {
+  display: none !important;
+}
+
+.btn-admin-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.75rem;
+  background: var(--surface2);
+  border: 1.5px solid var(--border);
+  color: var(--text);
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.btn-admin-pill:hover {
+  border-color: var(--primary);
+  background: var(--border);
+}
+
+body.is-admin .btn-admin-pill {
+  background: #E8F0E6;
+  border-color: var(--success);
+  color: #2e5927;
+}
+
+.btn-sidebar-admin {
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.25);
+  color: #fff;
+  border-radius: 14px;
+  padding: 0.2rem 0.55rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--transition);
+}
+.btn-sidebar-admin:hover {
+  background: rgba(255,255,255,0.25);
+}
+
 /* ===== THEME TOGGLE BUTTON ===== */
 .btn-theme-toggle {
   background: var(--surface2);

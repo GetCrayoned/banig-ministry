@@ -15,7 +15,19 @@ A responsive, single-page web application for **Banig Ministry** — manage even
 | 📖 **Devotionals** | Write weekly devotionals with Bible verse, reflection & prayer |
 | 🎵 **Song Repository** | Store song lyrics with key, language, tags, and links |
 | 💝 **Tithes & Offering** | Display QR codes (GCash, PayMaya, etc.) for giving |
+| 🔐 **Admin Mode** | Password-protected CMS — only admins can add, edit, or delete |
 | ⚙️ **Settings** | Ministry info + export/import data as JSON backup |
+
+---
+
+## 🔐 Admin Authentication
+
+The webapp is **read-only** for regular church members and worshippers (they can read devotionals, view events, search song lyrics with zoom controls, and scan offering QR codes without seeing any edit or delete buttons).
+
+- **Default Admin Password:** `banig2025`
+- **How to log in:** Click the **🔒 Admin** button in the top bar or sidebar footer.
+- **Change Password:** Once logged in as admin, go to **Settings → Admin Security** to set a custom password.
+- **Exit Admin Mode:** Click **👑 Admin (Exit)** anytime to lock the site back to public view.
 
 ---
 

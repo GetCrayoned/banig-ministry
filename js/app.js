@@ -19,6 +19,140 @@ const DB = {
   })
 };
 
+// ===================== ADMIN SYSTEM =====================
+// Default SHA-256 hash for "banig2025"
+const DEFAULT_ADMIN_HASH = '65bcc56d9eb0e485e204de53c703eacf44ba660f5e4b2c61e1a97b46e2b0b03a';
+
+async function sha256(str) {
+  const enc = new TextEncoder().encode(str);
+  const buf = await crypto.subtle.digest('SHA-256', enc);
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+function getStoredAdminHash() {
+  return localStorage.getItem('banig_admin_hash') || DEFAULT_ADMIN_HASH;
+}
+
+function isAdmin() {
+  return sessionStorage.getItem('banig_admin_active') === 'true';
+}
+
+function setAdminSession(active) {
+  if (active) {
+    sessionStorage.setItem('banig_admin_active', 'true');
+    document.body.classList.add('is-admin');
+  } else {
+    sessionStorage.removeItem('banig_admin_active');
+    document.body.classList.remove('is-admin');
+  }
+  updateAdminUI();
+}
+
+function updateAdminUI() {
+  const admin = isAdmin();
+  if (admin) {
+    document.body.classList.add('is-admin');
+  } else {
+    document.body.classList.remove('is-admin');
+  }
+
+  const topBtn = document.getElementById('adminStatusBtn');
+  if (topBtn) {
+    topBtn.innerHTML = admin ? '👑 Admin (Exit)' : '🔒 Admin';
+    topBtn.setAttribute('title', admin ? 'Click to log out of admin mode' : 'Click to log in as administrator');
+  }
+
+  const sideBtn = document.getElementById('sidebarAdminBtn');
+  if (sideBtn) {
+    sideBtn.textContent = admin ? '👑 Logout' : '🔒 Login';
+  }
+
+  // Refresh page components to display or hide edit controls
+  const activePage = document.querySelector('.page.active');
+  if (activePage) {
+    const pageId = activePage.id.replace('page-', '');
+    if (pageId === 'events') renderEvents();
+    if (pageId === 'attendance') renderAttendance();
+    if (pageId === 'devotionals') renderDevotionals();
+    if (pageId === 'songs') renderSongs();
+    if (pageId === 'giving') renderQrCodes();
+  }
+}
+
+function handleAdminStatusClick() {
+  if (isAdmin()) {
+    if (confirm('Log out of Admin mode? Content will be set to read-only.')) {
+      setAdminSession(false);
+      showToast('Logged out of Admin mode');
+    }
+  } else {
+    openModal('adminLoginModal');
+    const input = document.getElementById('adminPasswordInput');
+    if (input) {
+      input.value = '';
+      setTimeout(() => input.focus(), 250);
+    }
+  }
+}
+
+async function handleAdminLoginForm(e) {
+  e.preventDefault();
+  const input = document.getElementById('adminPasswordInput').value;
+  const hash = await sha256(input);
+  const targetHash = getStoredAdminHash();
+  const errEl = document.getElementById('adminLoginError');
+
+  if (hash === targetHash) {
+    if (errEl) errEl.style.display = 'none';
+    setAdminSession(true);
+    closeModal('adminLoginModal');
+    showToast('👑 Welcome Admin! Edit permissions unlocked.');
+  } else {
+    if (errEl) {
+      errEl.textContent = 'Incorrect admin password. Try again.';
+      errEl.style.display = 'block';
+    }
+  }
+}
+
+async function changeAdminPassword() {
+  if (!isAdmin()) {
+    showToast('Admin login required.', 'error');
+    return;
+  }
+  const curr = document.getElementById('currentAdminPass').value;
+  const newP = document.getElementById('newAdminPass').value;
+  const conf = document.getElementById('confirmAdminPass').value;
+
+  if (!curr || !newP || !conf) {
+    showToast('All password fields are required.', 'error');
+    return;
+  }
+
+  const currHash = await sha256(curr);
+  if (currHash !== getStoredAdminHash()) {
+    showToast('Current password is incorrect.', 'error');
+    return;
+  }
+
+  if (newP.length < 6) {
+    showToast('New password must be at least 6 characters.', 'error');
+    return;
+  }
+
+  if (newP !== conf) {
+    showToast('New passwords do not match.', 'error');
+    return;
+  }
+
+  const newHash = await sha256(newP);
+  localStorage.setItem('banig_admin_hash', newHash);
+  document.getElementById('currentAdminPass').value = '';
+  document.getElementById('newAdminPass').value = '';
+  document.getElementById('confirmAdminPass').value = '';
+  showToast('Admin password changed successfully!');
+}
+
 // ===================== UTILS =====================
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2);
 
@@ -111,8 +245,16 @@ function closeSidebar() {
 }
 
 // ===================== MODALS =====================
+const ADMIN_PROTECTED_MODALS = ['eventModal', 'attendanceModal', 'devotionalModal', 'songModal', 'qrModal'];
+
 function openModal(id) {
-  document.getElementById(id).classList.add('open');
+  if (ADMIN_PROTECTED_MODALS.includes(id) && !isAdmin()) {
+    showToast('Admin login required.', 'error');
+    openModal('adminLoginModal');
+    return;
+  }
+  const el = document.getElementById(id);
+  if (el) el.classList.add('open');
 }
 function closeModal(id) {
   document.getElementById(id).classList.remove('open');
@@ -185,6 +327,7 @@ function updateStats() {
 
 // ===================== EVENTS =====================
 function saveEvent() {
+  if (!isAdmin()) { showToast('Admin access required.', 'error'); openModal('adminLoginModal'); return; }
   const id = document.getElementById('editEventId').value;
   const title = document.getElementById('eventTitle').value.trim();
   const date = document.getElementById('eventDate').value;
@@ -231,6 +374,7 @@ function resetEventForm() {
 }
 
 function editEvent(id) {
+  if (!isAdmin()) { showToast('Admin access required.', 'error'); openModal('adminLoginModal'); return; }
   const events = DB.get('events');
   const e = events.find(ev => ev.id === id);
   if (!e) return;
@@ -246,6 +390,7 @@ function editEvent(id) {
 }
 
 function deleteEvent(id) {
+  if (!isAdmin()) { showToast('Admin access required.', 'error'); openModal('adminLoginModal'); return; }
   if (!confirm('Delete this event?')) return;
   DB.set('events', DB.get('events').filter(e => e.id !== id));
   renderEvents();
@@ -292,10 +437,12 @@ function renderEvents() {
           </div>
           ${e.description ? `<div class="event-desc">${escHtml(e.description)}</div>` : ''}
         </div>
-        <div class="event-card-footer">
-          <button class="btn-icon" onclick="editEvent('${e.id}')">✏️ Edit</button>
-          <button class="btn-icon danger" onclick="deleteEvent('${e.id}')">🗑 Delete</button>
-        </div>
+        ${isAdmin() ? `
+          <div class="event-card-footer">
+            <button class="btn-icon" onclick="editEvent('${e.id}')">✏️ Edit</button>
+            <button class="btn-icon danger" onclick="deleteEvent('${e.id}')">🗑 Delete</button>
+          </div>
+        ` : ''}
       </div>
     `;
   }).join('');
@@ -303,6 +450,7 @@ function renderEvents() {
 
 // ===================== ATTENDANCE =====================
 function saveAttendance() {
+  if (!isAdmin()) { showToast('Admin access required.', 'error'); openModal('adminLoginModal'); return; }
   const id = document.getElementById('editAttendanceId').value;
   const eventName = document.getElementById('attendanceEvent').value.trim();
   const date = document.getElementById('attendanceDate').value;
@@ -347,6 +495,7 @@ function resetAttendanceForm() {
 }
 
 function editAttendance(id) {
+  if (!isAdmin()) { showToast('Admin access required.', 'error'); openModal('adminLoginModal'); return; }
   const rec = DB.get('attendance').find(a => a.id === id);
   if (!rec) return;
   document.getElementById('editAttendanceId').value = rec.id;
@@ -358,6 +507,7 @@ function editAttendance(id) {
 }
 
 function deleteAttendance(id) {
+  if (!isAdmin()) { showToast('Admin access required.', 'error'); openModal('adminLoginModal'); return; }
   if (!confirm('Delete this attendance record?')) return;
   DB.set('attendance', DB.get('attendance').filter(a => a.id !== id));
   renderAttendance();
@@ -375,8 +525,9 @@ function renderAttendance() {
   records.sort((a, b) => b.date.localeCompare(a.date));
 
   const tbody = document.getElementById('attendanceBody');
+  const admin = isAdmin();
   if (!records.length) {
-    tbody.innerHTML = '<tr><td colspan="5" class="empty-msg">No attendance records found.</td></tr>';
+    tbody.innerHTML = `<tr><td colspan="${admin ? 5 : 4}" class="empty-msg">No attendance records found.</td></tr>`;
     return;
   }
   tbody.innerHTML = records.map(r => `
@@ -390,18 +541,21 @@ function renderAttendance() {
         <small style="color:var(--text-muted)">${r.members.length} attendee${r.members.length !== 1 ? 's' : ''}</small>
       </td>
       <td>${r.notes ? escHtml(r.notes) : '<span style="color:var(--text-muted)">—</span>'}</td>
-      <td>
-        <div style="display:flex;gap:0.4rem;">
-          <button class="btn-icon" onclick="editAttendance('${r.id}')">✏️</button>
-          <button class="btn-icon danger" onclick="deleteAttendance('${r.id}')">🗑</button>
-        </div>
-      </td>
+      ${admin ? `
+        <td>
+          <div style="display:flex;gap:0.4rem;">
+            <button class="btn-icon" onclick="editAttendance('${r.id}')">✏️</button>
+            <button class="btn-icon danger" onclick="deleteAttendance('${r.id}')">🗑</button>
+          </div>
+        </td>
+      ` : ''}
     </tr>
   `).join('');
 }
 
 // ===================== DEVOTIONALS =====================
 function saveDevotional() {
+  if (!isAdmin()) { showToast('Admin access required.', 'error'); openModal('adminLoginModal'); return; }
   const id = document.getElementById('editDevId').value;
   const title = document.getElementById('devTitle').value.trim();
   const date = document.getElementById('devDate').value;
@@ -448,6 +602,7 @@ function resetDevForm() {
 }
 
 function editDevotional(id) {
+  if (!isAdmin()) { showToast('Admin access required.', 'error'); openModal('adminLoginModal'); return; }
   const d = DB.get('devotionals').find(x => x.id === id);
   if (!d) return;
   document.getElementById('editDevId').value = d.id;
@@ -491,6 +646,7 @@ function viewDevotional(id) {
 }
 
 function deleteDevotional(id) {
+  if (!isAdmin()) { showToast('Admin access required.', 'error'); openModal('adminLoginModal'); return; }
   if (!confirm('Delete this devotional?')) return;
   DB.set('devotionals', DB.get('devotionals').filter(d => d.id !== id));
   renderDevotionals();
@@ -527,8 +683,10 @@ function renderDevotionals() {
       </div>
       <div class="dev-card-footer">
         <button class="btn-icon" onclick="viewDevotional('${d.id}')">👁 Read</button>
-        <button class="btn-icon" onclick="editDevotional('${d.id}')">✏️ Edit</button>
-        <button class="btn-icon danger" onclick="deleteDevotional('${d.id}')">🗑</button>
+        ${isAdmin() ? `
+          <button class="btn-icon" onclick="editDevotional('${d.id}')">✏️ Edit</button>
+          <button class="btn-icon danger" onclick="deleteDevotional('${d.id}')">🗑</button>
+        ` : ''}
       </div>
     </div>
   `).join('');
@@ -536,6 +694,7 @@ function renderDevotionals() {
 
 // ===================== SONGS =====================
 function saveSong() {
+  if (!isAdmin()) { showToast('Admin access required.', 'error'); openModal('adminLoginModal'); return; }
   const id = document.getElementById('editSongId').value;
   const title = document.getElementById('songTitle').value.trim();
   const lyrics = document.getElementById('songLyrics').value.trim();
@@ -579,6 +738,7 @@ function resetSongForm() {
 }
 
 function editSong(id) {
+  if (!isAdmin()) { showToast('Admin access required.', 'error'); openModal('adminLoginModal'); return; }
   const s = DB.get('songs').find(x => x.id === id);
   if (!s) return;
   document.getElementById('editSongId').value = s.id;
@@ -611,6 +771,7 @@ function viewLyrics(id) {
 }
 
 function deleteSong(id) {
+  if (!isAdmin()) { showToast('Admin access required.', 'error'); openModal('adminLoginModal'); return; }
   if (!confirm('Delete this song?')) return;
   DB.set('songs', DB.get('songs').filter(s => s.id !== id));
   renderSongs();
@@ -636,6 +797,7 @@ function renderSongs() {
     el.innerHTML = '<p class="empty-msg" style="grid-column:1/-1;padding:2rem 0;">No songs found.</p>';
     return;
   }
+  const admin = isAdmin();
   el.innerHTML = songs.map(s => `
     <div class="song-card">
       <div class="song-card-header">
@@ -652,8 +814,10 @@ function renderSongs() {
       </div>
       <div class="song-card-footer">
         <button class="btn-icon" onclick="viewLyrics('${s.id}')">🎵 Lyrics</button>
-        <button class="btn-icon" onclick="editSong('${s.id}')">✏️</button>
-        <button class="btn-icon danger" onclick="deleteSong('${s.id}')">🗑</button>
+        ${admin ? `
+          <button class="btn-icon" onclick="editSong('${s.id}')">✏️</button>
+          <button class="btn-icon danger" onclick="deleteSong('${s.id}')">🗑</button>
+        ` : ''}
         ${s.link ? `<a href="${escHtml(s.link)}" target="_blank" rel="noopener" class="btn-icon" title="Listen">🔗</a>` : ''}
       </div>
     </div>
@@ -679,6 +843,7 @@ function previewQrImage(e) {
 }
 
 function saveQrCode() {
+  if (!isAdmin()) { showToast('Admin access required.', 'error'); openModal('adminLoginModal'); return; }
   const id = document.getElementById('editQrId').value;
   const label = document.getElementById('qrLabel').value.trim();
   const type = document.getElementById('qrType').value;
@@ -738,6 +903,7 @@ function resetQrForm() {
 }
 
 function deleteQrCode(id) {
+  if (!isAdmin()) { showToast('Admin access required.', 'error'); openModal('adminLoginModal'); return; }
   if (!confirm('Delete this QR code?')) return;
   DB.set('qrCodes', DB.get('qrCodes').filter(q => q.id !== id));
   renderQrCodes();
@@ -753,12 +919,13 @@ function renderQrCodes() {
       <div style="grid-column:1/-1;text-align:center;padding:3rem 0;color:var(--text-muted);">
         <div style="font-size:3rem;margin-bottom:0.75rem;">💝</div>
         <p>No QR codes added yet.</p>
-        <p style="font-size:0.85rem;margin-top:0.25rem;">Add a GCash, PayMaya, or bank QR code to get started.</p>
+        <p style="font-size:0.85rem;margin-top:0.25rem;">${isAdmin() ? 'Add a GCash, PayMaya, or bank QR code to get started.' : 'Giving options will appear here once configured.'}</p>
       </div>
     `;
     return;
   }
 
+  const admin = isAdmin();
   el.innerHTML = qrCodes.map(qr => `
     <div class="qr-card" id="qr-card-${qr.id}">
       <div class="qr-label">${escHtml(qr.label)}</div>
@@ -768,9 +935,11 @@ function renderQrCodes() {
           ? `<img src="${qr.imageData}" alt="QR Code" style="width:100%;height:100%;object-fit:contain;" />`
           : `<div id="qr-gen-${qr.id}"></div>`}
       </div>
-      <div class="qr-actions">
-        <button class="btn-icon danger" onclick="deleteQrCode('${qr.id}')">🗑 Delete</button>
-      </div>
+      ${admin ? `
+        <div class="qr-actions">
+          <button class="btn-icon danger" onclick="deleteQrCode('${qr.id}')">🗑 Delete</button>
+        </div>
+      ` : ''}
     </div>
   `).join('');
 
@@ -804,6 +973,7 @@ function loadSettings() {
 }
 
 function saveSettings() {
+  if (!isAdmin()) { showToast('Admin access required.', 'error'); openModal('adminLoginModal'); return; }
   DB.set('settings', {
     name: document.getElementById('settingName').value.trim(),
     tagline: document.getElementById('settingTagline').value.trim(),
@@ -814,6 +984,7 @@ function saveSettings() {
 }
 
 function exportData() {
+  if (!isAdmin()) { showToast('Admin access required.', 'error'); openModal('adminLoginModal'); return; }
   const data = DB.all();
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   const a = document.createElement('a');
@@ -824,6 +995,7 @@ function exportData() {
 }
 
 function importData(e) {
+  if (!isAdmin()) { showToast('Admin access required.', 'error'); openModal('adminLoginModal'); return; }
   const file = e.target.files[0];
   if (!file) return;
   const reader = new FileReader();
@@ -844,6 +1016,7 @@ function importData(e) {
 }
 
 function clearAllData() {
+  if (!isAdmin()) { showToast('Admin access required.', 'error'); openModal('adminLoginModal'); return; }
   if (!confirm('⚠️ This will permanently delete ALL data. This cannot be undone. Continue?')) return;
   ['events','attendance','devotionals','songs','qrCodes','settings'].forEach(key => {
     localStorage.removeItem('banig_' + key);
@@ -931,6 +1104,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('overlay').addEventListener('click', closeSidebar);
 
   initTheme();
+  updateAdminUI();
   setCurrentDate();
   renderPage('dashboard');
 });
