@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Banig Ministry</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet" />
+  <!-- QR Code Library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
+<body>
+
+  <!-- ========== SIDEBAR NAV ========== -->
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="logo-mark">🌿</div>
+      <div class="logo-text">
+        <span class="logo-title">Banig</span>
+        <span class="logo-sub">Ministry</span>
+      </div>
+      <button class="close-sidebar" id="closeSidebar">✕</button>
+    </div>
+
+    <ul class="nav-links">
+      <li><a href="#" class="nav-link active" data-page="dashboard">🏠 Dashboard</a></li>
+      <li><a href="#" class="nav-link" data-page="events">📅 Events</a></li>
+      <li><a href="#" class="nav-link" data-page="attendance">✅ Attendance</a></li>
+      <li><a href="#" class="nav-link" data-page="devotionals">📖 Devotionals</a></li>
+      <li><a href="#" class="nav-link" data-page="songs">🎵 Song Repository</a></li>
+      <li><a href="#" class="nav-link" data-page="giving">💝 Tithes & Offering</a></li>
+      <li><a href="#" class="nav-link" data-page="settings">⚙️ Settings</a></li>
+    </ul>
+
+    <div class="sidebar-footer">
+      <p>Banig Ministry &copy; 2025</p>
+    </div>
+  </nav>
+
+  <!-- ========== OVERLAY ========== -->
+  <div class="overlay" id="overlay"></div>
+
+  <!-- ========== MAIN CONTENT ========== -->
+  <div class="main-wrapper">
+    <header class="topbar">
+      <button class="hamburger" id="hamburger">☰</button>
+      <h1 class="page-title" id="pageTitle">Dashboard</h1>
+      <div class="topbar-actions">
+        <span class="current-date" id="currentDate"></span>
+      </div>
+    </header>
+
+    <main class="content" id="mainContent">
+
+      <!-- ===== DASHBOARD PAGE ===== -->
+      <section class="page active" id="page-dashboard">
+        <div class="hero-banner">
+          <div class="hero-text">
+            <h2>Welcome to Banig Ministry</h2>
+            <p>Serving together in faith, love, and unity.</p>
+          </div>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon">📅</div>
+            <div class="stat-info">
+              <span class="stat-num" id="statEvents">0</span>
+              <span class="stat-label">Upcoming Events</span>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">🙋</div>
+            <div class="stat-info">
+              <span class="stat-num" id="statAttendance">0</span>
+              <span class="stat-label">Total Members</span>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">📖</div>
+            <div class="stat-info">
+              <span class="stat-num" id="statDevotionals">0</span>
+              <span class="stat-label">Devotionals</span>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">🎵</div>
+            <div class="stat-info">
+              <span class="stat-num" id="statSongs">0</span>
+              <span class="stat-label">Songs</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="dashboard-grid">
+          <div class="card">
+            <div class="card-header">
+              <h3>📅 Upcoming Events</h3>
+              <button class="btn-sm" onclick="goToPage('events')">View All</button>
+            </div>
+            <div id="dashboardEvents" class="list-preview">
+              <p class="empty-msg">No upcoming events.</p>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <h3>📖 Latest Devotional</h3>
+              <button class="btn-sm" onclick="goToPage('devotionals')">View All</button>
+            </div>
+            <div id="dashboardDevotional" class="list-preview">
+              <p class="empty-msg">No devotionals added yet.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== EVENTS PAGE ===== -->
+      <section class="page" id="page-events">
+        <div class="page-actions">
+          <h2>Events</h2>
+          <button class="btn-primary" onclick="openModal('eventModal')">+ Add Event</button>
+        </div>
+
+        <div class="filter-bar">
+          <input type="text" id="eventSearch" class="search-input" placeholder="Search events..." oninput="renderEvents()" />
+          <select id="eventFilter" onchange="renderEvents()" class="filter-select">
+            <option value="all">All Events</option>
+            <option value="upcoming">Upcoming</option>
+            <option value="past">Past</option>
+          </select>
+        </div>
+
+        <div id="eventsList" class="cards-grid"></div>
+      </section>
+
+      <!-- ===== ATTENDANCE PAGE ===== -->
+      <section class="page" id="page-attendance">
+        <div class="page-actions">
+          <h2>Attendance</h2>
+          <button class="btn-primary" onclick="openModal('attendanceModal')">+ Log Attendance</button>
+        </div>
+
+        <div class="filter-bar">
+          <input type="text" id="attendanceSearch" class="search-input" placeholder="Search by event or member..." oninput="renderAttendance()" />
+        </div>
+
+        <div id="attendanceList" class="table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Event / Session</th>
+                <th>Attendees</th>
+                <th>Notes</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="attendanceBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ===== DEVOTIONALS PAGE ===== -->
+      <section class="page" id="page-devotionals">
+        <div class="page-actions">
+          <h2>Weekly Devotionals</h2>
+          <button class="btn-primary" onclick="openModal('devotionalModal')">+ Add Devotional</button>
+        </div>
+
+        <div class="filter-bar">
+          <input type="text" id="devSearch" class="search-input" placeholder="Search devotionals..." oninput="renderDevotionals()" />
+        </div>
+
+        <div id="devotionalsList" class="cards-grid"></div>
+      </section>
+
+      <!-- ===== SONGS PAGE ===== -->
+      <section class="page" id="page-songs">
+        <div class="page-actions">
+          <h2>Song Repository</h2>
+          <button class="btn-primary" onclick="openModal('songModal')">+ Add Song</button>
+        </div>
+
+        <div class="filter-bar">
+          <input type="text" id="songSearch" class="search-input" placeholder="Search songs, artists..." oninput="renderSongs()" />
+          <select id="songFilter" onchange="renderSongs()" class="filter-select">
+            <option value="all">All Languages</option>
+            <option value="english">English</option>
+            <option value="tagalog">Tagalog</option>
+            <option value="bisaya">Bisaya</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+
+        <div id="songsList" class="songs-grid"></div>
+      </section>
+
+      <!-- ===== GIVING PAGE ===== -->
+      <section class="page" id="page-giving">
+        <div class="page-actions">
+          <h2>Tithes &amp; Offering</h2>
+          <button class="btn-primary" onclick="openModal('qrModal')">+ Manage QR Codes</button>
+        </div>
+
+        <p class="section-desc">Scan a QR code below to give your tithes and offering. Thank you for your faithful giving! 🙏</p>
+
+        <div id="qrCodesList" class="qr-grid"></div>
+      </section>
+
+      <!-- ===== SETTINGS PAGE ===== -->
+      <section class="page" id="page-settings">
+        <div class="page-actions">
+          <h2>Settings</h2>
+        </div>
+        <div class="settings-container">
+          <div class="card">
+            <h3>Ministry Info</h3>
+            <div class="form-group">
+              <label>Ministry Name</label>
+              <input type="text" id="settingName" class="form-input" placeholder="Banig Ministry" />
+            </div>
+            <div class="form-group">
+              <label>Tagline</label>
+              <input type="text" id="settingTagline" class="form-input" placeholder="Serving together in faith..." />
+            </div>
+            <div class="form-group">
+              <label>Contact Email</label>
+              <input type="email" id="settingEmail" class="form-input" placeholder="ministry@example.org" />
+            </div>
+            <div class="form-group">
+              <label>Location / Church</label>
+              <input type="text" id="settingLocation" class="form-input" placeholder="Church name or address" />
+            </div>
+            <button class="btn-primary" onclick="saveSettings()">Save Settings</button>
+          </div>
+
+          <div class="card">
+            <h3>Data Management</h3>
+            <p class="text-muted">Export or import your ministry data as a JSON backup file.</p>
+            <div class="btn-row">
+              <button class="btn-secondary" onclick="exportData()">⬇ Export Data</button>
+              <label class="btn-secondary" style="cursor:pointer;">
+                ⬆ Import Data
+                <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)" />
+              </label>
+            </div>
+            <hr style="margin:1rem 0;border-color:var(--border)"/>
+            <p class="text-muted text-danger">Danger zone: this will delete all stored data.</p>
+            <button class="btn-danger" onclick="clearAllData()">🗑 Clear All Data</button>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- ========== MODALS ========== -->
+
+  <!-- Event Modal -->
+  <div class="modal-overlay" id="eventModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="eventModalTitle">Add Event</h3>
+        <button class="modal-close" onclick="closeModal('eventModal')">✕</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="editEventId" />
+        <div class="form-group">
+          <label>Event Title *</label>
+          <input type="text" id="eventTitle" class="form-input" placeholder="e.g. Sunday Worship Service" />
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Date *</label>
+            <input type="date" id="eventDate" class="form-input" />
+          </div>
+          <div class="form-group">
+            <label>Time</label>
+            <input type="time" id="eventTime" class="form-input" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Location</label>
+          <input type="text" id="eventLocation" class="form-input" placeholder="Venue or online link" />
+        </div>
+        <div class="form-group">
+          <label>Category</label>
+          <select id="eventCategory" class="form-input">
+            <option value="worship">Worship Service</option>
+            <option value="fellowship">Fellowship</option>
+            <option value="prayer">Prayer Meeting</option>
+            <option value="outreach">Outreach</option>
+            <option value="training">Training / Seminar</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Description</label>
+          <textarea id="eventDescription" class="form-input" rows="3" placeholder="Event details..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" onclick="closeModal('eventModal')">Cancel</button>
+        <button class="btn-primary" onclick="saveEvent()">Save Event</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Attendance Modal -->
+  <div class="modal-overlay" id="attendanceModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Log Attendance</h3>
+        <button class="modal-close" onclick="closeModal('attendanceModal')">✕</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="editAttendanceId" />
+        <div class="form-group">
+          <label>Session / Event Name *</label>
+          <input type="text" id="attendanceEvent" class="form-input" placeholder="e.g. Sunday Service Nov 17" />
+        </div>
+        <div class="form-group">
+          <label>Date *</label>
+          <input type="date" id="attendanceDate" class="form-input" />
+        </div>
+        <div class="form-group">
+          <label>Attendees (one per line) *</label>
+          <textarea id="attendanceMembers" class="form-input" rows="6" placeholder="Juan Dela Cruz&#10;Maria Santos&#10;Pedro Reyes"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Notes</label>
+          <textarea id="attendanceNotes" class="form-input" rows="2" placeholder="Any notes for this session..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" onclick="closeModal('attendanceModal')">Cancel</button>
+        <button class="btn-primary" onclick="saveAttendance()">Save Attendance</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Devotional Modal -->
+  <div class="modal-overlay" id="devotionalModal">
+    <div class="modal modal-lg">
+      <div class="modal-header">
+        <h3 id="devModalTitle">Add Devotional</h3>
+        <button class="modal-close" onclick="closeModal('devotionalModal')">✕</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="editDevId" />
+        <div class="form-group">
+          <label>Title *</label>
+          <input type="text" id="devTitle" class="form-input" placeholder="Devotional title" />
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Date *</label>
+            <input type="date" id="devDate" class="form-input" />
+          </div>
+          <div class="form-group">
+            <label>Speaker / Author</label>
+            <input type="text" id="devSpeaker" class="form-input" placeholder="Speaker name" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Bible Verse Reference</label>
+          <input type="text" id="devVerse" class="form-input" placeholder='e.g. John 3:16 / "For God so loved..."' />
+        </div>
+        <div class="form-group">
+          <label>Message / Content *</label>
+          <textarea id="devContent" class="form-input" rows="8" placeholder="Write the devotional message here..."></textarea>
+        </div>
+        <div class="form-group">
+          <label>Reflection / Application</label>
+          <textarea id="devReflection" class="form-input" rows="3" placeholder="Application points or questions for reflection..."></textarea>
+        </div>
+        <div class="form-group">
+          <label>Prayer</label>
+          <textarea id="devPrayer" class="form-input" rows="3" placeholder="Closing prayer..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" onclick="closeModal('devotionalModal')">Cancel</button>
+        <button class="btn-primary" onclick="saveDevotional()">Save Devotional</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Song Modal -->
+  <div class="modal-overlay" id="songModal">
+    <div class="modal modal-lg">
+      <div class="modal-header">
+        <h3 id="songModalTitle">Add Song</h3>
+        <button class="modal-close" onclick="closeModal('songModal')">✕</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="editSongId" />
+        <div class="form-row">
+          <div class="form-group">
+            <label>Song Title *</label>
+            <input type="text" id="songTitle" class="form-input" placeholder="Song title" />
+          </div>
+          <div class="form-group">
+            <label>Artist / Composer</label>
+            <input type="text" id="songArtist" class="form-input" placeholder="Artist or composer" />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Language</label>
+            <select id="songLanguage" class="form-input">
+              <option value="english">English</option>
+              <option value="tagalog">Tagalog</option>
+              <option value="bisaya">Bisaya</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Key</label>
+            <input type="text" id="songKey" class="form-input" placeholder="e.g. G, C, D" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Category / Tags</label>
+          <input type="text" id="songTags" class="form-input" placeholder="e.g. Praise, Worship, Hymn" />
+        </div>
+        <div class="form-group">
+          <label>Lyrics *</label>
+          <textarea id="songLyrics" class="form-input lyrics-input" rows="12" placeholder="Paste song lyrics here...&#10;&#10;[Verse 1]&#10;...&#10;&#10;[Chorus]&#10;..."></textarea>
+        </div>
+        <div class="form-group">
+          <label>YouTube / Spotify Link (optional)</label>
+          <input type="url" id="songLink" class="form-input" placeholder="https://youtube.com/..." />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" onclick="closeModal('songModal')">Cancel</button>
+        <button class="btn-primary" onclick="saveSong()">Save Song</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- QR Code Modal -->
+  <div class="modal-overlay" id="qrModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="qrModalTitle">Add QR Code</h3>
+        <button class="modal-close" onclick="closeModal('qrModal')">✕</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="editQrId" />
+        <div class="form-group">
+          <label>Label / Name *</label>
+          <input type="text" id="qrLabel" class="form-input" placeholder="e.g. GCash - Tithes" />
+        </div>
+        <div class="form-group">
+          <label>Description</label>
+          <input type="text" id="qrDesc" class="form-input" placeholder="e.g. GCash: 09XX-XXX-XXXX" />
+        </div>
+        <div class="form-group">
+          <label>QR Code Type</label>
+          <select id="qrType" class="form-input" onchange="toggleQrFields()">
+            <option value="url">URL / Payment Link</option>
+            <option value="upload">Upload QR Image</option>
+          </select>
+        </div>
+        <div id="qrUrlGroup" class="form-group">
+          <label>Payment URL or Text *</label>
+          <input type="text" id="qrUrl" class="form-input" placeholder="https://gcash.me/... or any payment link" />
+          <small class="hint">A QR code will be automatically generated from this link.</small>
+        </div>
+        <div id="qrUploadGroup" class="form-group" style="display:none">
+          <label>Upload QR Image *</label>
+          <input type="file" id="qrImageUpload" class="form-input" accept="image/*" onchange="previewQrImage(event)" />
+          <div id="qrImagePreview" style="margin-top:0.5rem;"></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" onclick="closeModal('qrModal')">Cancel</button>
+        <button class="btn-primary" onclick="saveQrCode()">Save QR Code</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Lyrics View Modal -->
+  <div class="modal-overlay" id="lyricsModal">
+    <div class="modal modal-lg">
+      <div class="modal-header">
+        <h3 id="lyricsModalTitle">Song Lyrics</h3>
+        <button class="modal-close" onclick="closeModal('lyricsModal')">✕</button>
+      </div>
+      <div class="modal-body" id="lyricsModalBody"></div>
+      <div class="modal-footer">
+        <button class="btn-secondary" onclick="closeModal('lyricsModal')">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Devotional View Modal -->
+  <div class="modal-overlay" id="devViewModal">
+    <div class="modal modal-lg">
+      <div class="modal-header">
+        <h3 id="devViewTitle">Devotional</h3>
+        <button class="modal-close" onclick="closeModal('devViewModal')">✕</button>
+      </div>
+      <div class="modal-body" id="devViewBody"></div>
+      <div class="modal-footer">
+        <button class="btn-secondary" onclick="closeModal('devViewModal')">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div class="toast" id="toast"></div>
+
+  <script src="js/app.js"></script>
+</body>
+</html>
